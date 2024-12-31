@@ -39,6 +39,21 @@
   ],
   "author": "bethropolis",
   "license": "MIT",
+  "repository": {
+
+    "type": "git",
+
+    "url": "https://github.com/bethropolis/svelte-film-countdown.git"
+
+  },
+
+  "homepage": "https://bethropolis.github.io/svelte-film-countdown",
+
+  "bugs": {
+
+    "url": "https://github.com/bethropolis/svelte-film-countdown/issues"
+
+  },
   "devDependencies": {
     "@eslint/compat": "^1.2.3",
     "@sveltejs/adapter-auto": "^3.0.0",
