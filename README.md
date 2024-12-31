@@ -126,9 +126,8 @@ Import the `FilmCountdown` component into your Svelte component:
 <FilmCountdown
   initialCount={3}
   config={{
-    startLabel: "Begin!",
-    countingLabel: "Ticking...",
-    numberColor: "red"
+    numberColor: "red",
+    numCircles: 4
   }}
 />
 ```
