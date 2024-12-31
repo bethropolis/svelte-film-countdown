@@ -12,7 +12,6 @@ A vintage-style film countdown component for your Svelte 5 applications, built w
 *   **Callback Functions:**  Trigger actions when the countdown completes or after each count.
 *   **Looping Option:**  Continuously loop the countdown.
 *   **CSS Variable Theming:**  Easily customize the appearance using CSS variables.
-*   **Custom Content Slot:** Add your own content within the countdown container.
 
 ## Installation
 

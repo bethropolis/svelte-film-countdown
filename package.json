@@ -1,6 +1,6 @@
 {
   "name": "svelte-film-countdown",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A vintage-style film countdown component for Svelte 5.",
   "scripts": {
     "dev": "vite dev",
