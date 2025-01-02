@@ -4,8 +4,8 @@
 		countdownDuration = 1000, // Note: in milliseconds
 		onComplete = () => {}, // Callback when countdown finishes
 		onEachCount = () => {}, // Callback after each count
-		config = {},
-		loop = false
+		config =$bindable({}),
+		loop = $bindable(false)
 	} = $props();
 
 	const { numberColor = 'var(--countdown-number-color)', numCircles = 4 } = config;
@@ -15,6 +15,7 @@
 	let isRunning = $state(false);
 	let isPaused = $state(false);
 	let pauseStartTime = $state(0); // To store the timestamp when paused
+	let pausedDuration = $state(0); // To store the total duration of pauses
 
 	/**
 	 * Starts the countdown
@@ -25,6 +26,7 @@
 		progress = 0;
 		isRunning = true;
 		isPaused = false;
+		pausedDuration = 0; // Reset paused duration on start
 	}
 
 	/**
@@ -32,7 +34,7 @@
 	 * @returns {void}
 	 */
 	export function pause() {
-		if (isRunning) {
+		if (isRunning && !isPaused) {
 			isPaused = true;
 			pauseStartTime = performance.now();
 		}
@@ -45,6 +47,7 @@
 	export function resume() {
 		if (isPaused) {
 			isPaused = false;
+			pausedDuration += performance.now() - pauseStartTime; // Accumulate paused time
 		}
 	}
 
@@ -57,12 +60,14 @@
 		count = initialCount;
 		progress = 0;
 		isRunning = false;
+		pausedDuration = 0;
 	}
 
 	$effect(() => {
 		let startTime;
 		let animationFrame;
-		let pausedTime = 0;
+
+		console.log("something...")
 
 		const animate = (timestamp) => {
 			if (!isRunning) return;
@@ -72,8 +77,7 @@
 			}
 
 			if (!startTime) {
-				startTime = timestamp - pausedTime; // Adjust start time by paused duration
-				pausedTime = 0;
+				startTime = timestamp - pausedDuration; // Adjust start time by total paused duration
 			}
 
 			const elapsed = timestamp - startTime;
