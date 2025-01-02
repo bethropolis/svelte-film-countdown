@@ -8,7 +8,7 @@
 		loop = $bindable(false)
 	} = $props();
 
-	const { numberColor = 'var(--countdown-number-color)', numCircles = 4 } = config;
+	let { numberColor = 'var(--countdown-number-color)', numCircles = 4 } = config;
 
 	let count = $state(initialCount);
 	let progress = $state(0);
@@ -67,7 +67,6 @@
 		let startTime;
 		let animationFrame;
 
-		console.log("something...")
 
 		const animate = (timestamp) => {
 			if (!isRunning) return;
@@ -108,6 +107,7 @@
 		if (isRunning) {
 			animationFrame = requestAnimationFrame(animate);
 		}
+
 
 		return () => {
 			if (animationFrame) {
