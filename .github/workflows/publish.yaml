@@ -23,8 +23,11 @@ jobs:
 
       - name: Set package.json version
         run: npm version --no-git-tag-version ${{ steps.get_version.outputs.VERSION }}
-
+      
       - name: Build
+        run: npm run build
+      
+      - name: publish
         uses: JS-DevTools/npm-publish@v3
         with:
           token: ${{ secrets.NPM_TOKEN }}
