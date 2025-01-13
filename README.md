@@ -2,23 +2,31 @@
 
 A vintage-style film countdown component for your Svelte 5 applications, built with runes.
 
-![Example Countdown](.githubasserts/image.png)
+![Example Countdown](static/image.png)
 
 ## Features
 
-*   **Vintage Aesthetic:**  Provides a visually appealing retro film countdown experience.
-*   **Highly Customizable:**  Control duration, initial count, styling, and more through props and CSS variables.
-*   **External Control:**  Start, pause, resume, and reset the countdown programmatically.
-*   **Callback Functions:**  Trigger actions when the countdown completes or after each count.
-*   **Looping Option:**  Continuously loop the countdown.
-*   **CSS Variable Theming:**  Easily customize the appearance using CSS variables.
+*   **Authentic Vintage Aesthetic:**  Provides a visually compelling retro film countdown experience reminiscent of classic cinema.
+*   **Highly Customizable:**  Tailor the countdown's behavior and appearance with props and CSS variables. Control duration, initial count, styling of circles, numbers, and visual effects.
+*   **Programmatic Control:**  Imperatively manage the countdown's state using exported functions: `start`, `pause`, `resume`, and `reset`.
+*   **Event Callbacks:**  Execute custom logic when the countdown completes (`onComplete`) or after each decrement (`onEachCount`).
+*   **Looping Functionality:**  Enable continuous countdown loops with the `loop` prop.
+*   **CSS Variable Theming:**  Achieve consistent branding and easily adjust the visual theme using CSS variables.
 
 ## Installation
 
-You can install `svelte-film-countdown` using npm or yarn:
+Install `svelte-film-countdown` using your preferred package manager:
 
 ```bash
 npm install svelte-film-countdown
+```
+
+```bash
+yarn add svelte-film-countdown
+```
+
+```bash
+pnpm add svelte-film-countdown
 ```
 
 ```bash
@@ -29,7 +37,7 @@ bun add svelte-film-countdown
 
 Import the `FilmCountdown` component into your Svelte component:
 
-```html
+```svelte
 <script>
   import FilmCountdown from 'svelte-film-countdown';
 
@@ -66,20 +74,20 @@ Import the `FilmCountdown` component into your Svelte component:
   countdownDuration={1000}
   onComplete={handleComplete}
   onEachCount={handleEachCount}
->
-  <p slot="custom-content" style="text-align: center; font-style: italic;">Get ready!</p>
-</FilmCountdown>
+/>
 
 <br />
-<button onclick={startCountdown}>Start</button>
-<button onclick={pauseCountdown}>Pause</button>
-<button onclick={resumeCountdown}>Resume</button>
-<button onclick={resetCountdown}>Reset</button>
+<button on:click={startCountdown}>Start</button>
+<button on:click={pauseCountdown}>Pause</button>
+<button on:click={resumeCountdown}>Resume</button>
+<button on:click={resetCountdown}>Reset</button>
 ```
 
 ### Basic Example
 
-```html
+Render the countdown with default settings:
+
+```svelte
 <script>
   import FilmCountdown from 'svelte-film-countdown';
 </script>
@@ -87,9 +95,11 @@ Import the `FilmCountdown` component into your Svelte component:
 <FilmCountdown />
 ```
 
-### With Custom Initial Count and Duration
+### Custom Initial Count and Duration
 
-```html
+Configure the starting number and the duration of each count:
+
+```svelte
 <script>
   import FilmCountdown from 'svelte-film-countdown';
 </script>
@@ -97,9 +107,11 @@ Import the `FilmCountdown` component into your Svelte component:
 <FilmCountdown initialCount={10} countdownDuration={500} />
 ```
 
-### Using Callbacks
+### Utilizing Event Callbacks
 
-```html
+Execute functions when the countdown finishes or after each count:
+
+```svelte
 <script>
   import FilmCountdown from 'svelte-film-countdown';
 
@@ -115,9 +127,11 @@ Import the `FilmCountdown` component into your Svelte component:
 <FilmCountdown onComplete={handleComplete} onEachCount={handleEachCount} />
 ```
 
-### Configuration Options
+### Configuration Options via `config` Prop
 
-```html
+Customize the visual appearance of the countdown through the `config` prop:
+
+```svelte
 <script>
   import FilmCountdown from 'svelte-film-countdown';
 </script>
@@ -131,50 +145,62 @@ Import the `FilmCountdown` component into your Svelte component:
 />
 ```
 
-### Looping Countdown
+### Enabling Looping
 
-```html
+Make the countdown restart automatically after reaching zero. Note that you need to manually trigger `start()` to begin the countdown:
+
+```svelte
 <script>
   import FilmCountdown from 'svelte-film-countdown';
+  let countdownInstance;
+
+  function startLoopingCountdown() {
+    countdownInstance?.start();
+  }
 </script>
 
-<FilmCountdown loop={true} />
+<FilmCountdown bind:this={countdownInstance} loop={true} />
+<button on:click={startLoopingCountdown}>Start Looping Countdown</button>
 ```
-
-> NOTE: you need to trigger the `start` manuanly
 
 ## Props
 
-| Prop Name          | Type     | Default Value | Description                                                                         |
-| ------------------ | -------- | ------------- | ----------------------------------------------------------------------------------- |
-| `initialCount`     | `number` | `5`           | The starting number for the countdown.                                             |
-| `countdownDuration`| `number` | `1000`        | The duration for each count in milliseconds.                                       |
-| `onComplete`       | `() => void`| `() => {}`    | Callback function executed when the countdown reaches 0.                             |
-| `onEachCount`      | `(count: number) => void`| `() => {}`    | Callback function executed after each count, receiving the current count as an argument. |
-| `config`           | `object` | `{}`          | An object containing various configuration options. See below for details.        |
-| `loop`             | `boolean`| `false`       | If `true`, the countdown will restart automatically after reaching 0.               |
+| Prop Name          | Type                          | Default Value | Description                                                                                                       |
+| ------------------ | ----------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `initialCount`     | `number`                      | `5`           | The number from which the countdown begins.                                                                       |
+| `countdownDuration`| `number`                      | `1000`        | The time in milliseconds for each count decrement.                                                                |
+| `onComplete`       | `() => void`                  | `() => {}`    | A callback function that is executed when the countdown reaches 0.                                               |
+| `onEachCount`      | `(count: number) => void`     | `() => {}`    | A callback function executed after each count, receiving the current count as an argument.                      |
+| `config`           | `object`                      | `{}`          | An object containing properties to customize the visual aspects of the countdown. See the `config` details below. |
+| `loop`             | `boolean`                     | `false`       | If `true`, the countdown will automatically reset to `initialCount` and stop at 0, ready to be started again.   |
 
 ### `config` Object Properties
 
-| Property Name   | Type     | Default Value              | Description                                                                |
-| --------------- | -------- | -------------------------- | -------------------------------------------------------------------------- |
-| `numberColor`   | `string` | `'var(--countdown-number-color)'` | The color of the countdown number.                                  |
-| `numCircles`    | `number` | `4`                        | The number of animated circles around the countdown.                       |
+| Property Name           | Type     | Default Value                           | Description                                                                                                       |
+| ----------------------- | -------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `numberColor`           | `string` | `'var(--countdown-number-color)'`         | The color of the number displayed in the center of the countdown.                                                 |
+| `numCircles`            | `number` | `2`                                       | The number of concentric circles animating around the central number.                                              |
+| `circleRadius`          | `number` | `64`                                      | The radius of the outermost circle in pixels.                                                                     |
+| `circleSpacing`         | `number` | `8`                                       | The space in pixels between each concentric circle.                                                               |
+| `strokeRatio`           | `number` | `1 / 40`                                  | The ratio of the circle's radius that determines the thickness of the circle's stroke.                             |
+| `canvasSize`            | `number` | `256`                                     | The width and height of the SVG canvas (viewBox dimensions). The component will maintain a 16:9 aspect ratio.      |
+| `circleGradientStart`   | `string` | `'var(--circle-gradient-start)'`          | The starting color of the gradient applied to the circles.                                                        |
+| `circleGradientMiddle`  | `string` | `'var(--circle-gradient-middle)'`         | The middle color of the gradient applied to the circles.                                                          |
+| `circleGradientMiddleOpacity` | `number` | `0.8`                                 | The opacity of the middle color in the circle gradient.                                                           |
+| `circleGradientEnd`     | `string` | `'var(--circle-gradient-end)'`            | The ending color of the gradient applied to the circles.                                                          |
 
 ## Exported Functions
 
-You can control the `FilmCountdown` component externally using these exported functions, which require you to bind a reference to the component using `bind:this`:
+To control the countdown programmatically, you need to bind a reference to the `FilmCountdown` component using `bind:this`.
 
-*   **`start()`:**  Starts the countdown.
-*   **`pause()`:**  Pauses the countdown.
-*   **`resume()`:** Resumes the countdown from where it was paused.
-*   **`reset()`:**  Resets the countdown to its initial state.
+*   **`start()`:** Initiates the countdown sequence.
+*   **`pause()`:**  Temporarily halts the countdown.
+*   **`resume()`:** Continues the countdown from the paused state.
+*   **`reset()`:**  Stops the countdown and resets it to the `initialCount`.
 
-## Theming
+## Theming with CSS Variables
 
-The appearance of the `FilmCountdown` component can be easily customized using CSS variables. You can set these variables in your global styles or within the scope of a parent component.
-
-Here are the available CSS variables:
+Customize the visual theme of the `FilmCountdown` component by overriding these CSS variables in your global stylesheet or within a specific component's `<style>` block.
 
 ```css
 :root {
@@ -191,8 +217,6 @@ Here are the available CSS variables:
 
   --sweeping-background-color: rgba(0, 0, 0, 0.15);
 
-  --circle-stroke-width-thick: 3px;
-  --circle-stroke-width-thin: 2px;
   --circle-gradient-start: black;
   --circle-gradient-middle: black;
   --circle-gradient-middle-opacity: 0.8;
@@ -211,14 +235,13 @@ Here are the available CSS variables:
 }
 ```
 
-**Example of Theming:**
+**Example of Applying a Theme:**
 
-```html
+```svelte
 <style>
   :root {
     --countdown-number-color: lightyellow;
-    --countdown-button-color: darkred;
-    --countdown-button-text-color: white;
+    --sweeping-background-color: rgba(100, 0, 0, 0.25);
     --film-grain-opacity: 0.2;
   }
 </style>
@@ -228,7 +251,7 @@ Here are the available CSS variables:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to open issues or submit pull requests for bug fixes, improvements, or new features.
+Contributions are highly appreciated! If you find a bug, have an idea for an improvement, or want to add a new feature, please don't hesitate to open an issue or submit a pull request.
 
 ## License
 
