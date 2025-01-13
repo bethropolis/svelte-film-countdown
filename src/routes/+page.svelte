@@ -1,21 +1,36 @@
 <script>
 	import FilmCountdown from '$lib/FilmCountdown.svelte';
+	import Blooper from '../asserts/Blooper.mp3';
 
+	let audio = new Audio(Blooper);
 	// --- Reactive State ---
 	let initialCount = $state(5);
 	let countdownDuration = $state(1000);
 	let loop = $state(false);
-	let numberColor = $state('#4A3B4A'); // Deep purplish-brown
-	let numCircles = $state(4);
+	let config = $state({
+		numCircles: 2,
+		circleRadius: 60,
+		circleSpacing: 8,
+		strokeRatio: 0.02,
+		canvasSize: 256 
+	});
+	let beep = $state(false);
+	let showAdvancedOptions = $state(false);
 
 	let countdownInstance;
 
 	// --- Event Handlers ---
-	function handleComplete() {
+	async function handleComplete() {
+		if (beep) {
+			await audio.play();
+		}
 		console.log('Countdown finished!');
 	}
 
-	function handleEachCount(currentCount) {
+	async function handleEachCount(currentCount) {
+		if (beep) {
+			await audio.play();
+		}
 		console.log('Current count:', currentCount);
 	}
 
@@ -39,7 +54,7 @@
 
 <div class="min-h-screen bg-gray-200 flex flex-col">
 	<!-- Header -->
-	<header class="p-6 flex justify-end bg-gray-100 border-b border-gray-300">
+	<header class="p-6 flex justify-end border-">
 		<a
 			href="YOUR_GITHUB_REPOSITORY_LINK_HERE"
 			target="_blank"
@@ -53,65 +68,53 @@
 	<!-- Main Content -->
 	<main class="flex-grow flex flex-col items-center justify-center p-8">
 		<!-- Film Countdown Component -->
-		<div class="relative transform scale-125 md:scale-150 transition-transform duration-300 w-full max-w-lg">
+		<div
+			class="relative transform scale-125 md:scale-150 transition-transform duration-300 w-full max-w-lg"
+		>
 			<FilmCountdown
 				bind:this={countdownInstance}
-				initialCount={initialCount}
-				countdownDuration={countdownDuration}
-				loop={loop}
+				{initialCount}
+				{countdownDuration}
+				{loop}
 				onComplete={handleComplete}
 				onEachCount={handleEachCount}
-				config={{ numberColor: numberColor, numCircles: numCircles }}
+				bind:config
 			/>
 		</div>
 	</main>
 
 	<!-- Footer - Controls -->
 	<footer class="p-6 bg-white shadow-lg rounded-t-lg mt-auto border-t border-gray-300">
-		<div class="flex flex-wrap justify-center items-center gap-4">
-			<!-- Count Control -->
-			<div class="flex items-center">
-				<label for="initialCount" class="control-label">Count:</label>
-				<input type="number" id="initialCount" bind:value={initialCount} class="control-input focus:outline-none focus:shadow-outline focus:border-indigo-500" />
-			</div>
+		<div class="flex flex-col items-center justify-center gap-4 mb-4">
+			<!-- Crucial Controls -->
+			<div class="flex flex-wrap justify-center items-center gap-4">
+				<div class="flex items-center">
+					<label for="initialCount" class="control-label">Count:</label>
+					<input
+						type="number"
+						id="initialCount"
+						bind:value={initialCount}
+						class="control-input focus:outline-none focus:shadow-outline focus:border-indigo-500"
+					/>
+				</div>
 
-			<!-- Duration Control -->
-			<div class="flex items-center">
-				<label for="countdownDuration" class="control-label">Duration (ms):</label>
-				<input
-					type="number"
-					id="countdownDuration"
-					bind:value={countdownDuration}
-					class="control-input focus:outline-none focus:shadow-outline focus:border-indigo-500"
-				/>
-			</div>
-
-			<!-- Color Control -->
-			<div class="flex items-center">
-				<label for="numberColor" class="control-label">Color:</label>
-				<input
-					type="color"
-					id="numberColor"
-					bind:value={numberColor}
-					class="control-input-color focus:shadow-outline focus:border-indigo-500"
-				/>
-			</div>
-
-			<!-- Circles Control -->
-			<div class="flex items-center">
-				<label for="numCircles" class="control-label">Circles:</label>
-				<input type="number" id="numCircles" bind:value={numCircles} class="control-input" />
-			</div>
-
-			<!-- Loop Control -->
-			<div class="flex items-center">
-				<input type="checkbox" id="loop" bind:checked={loop} class="control-checkbox mr-1 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-indigo-500" />
-				<label for="loop" class="control-label">Loop</label>
+				<div class="flex items-center">
+					<label for="countdownDuration" class="control-label">Duration (ms):</label>
+					<input
+						type="number"
+						id="countdownDuration"
+						bind:value={countdownDuration}
+						class="control-input focus:outline-none focus:shadow-outline focus:border-indigo-500"
+					/>
+				</div>
 			</div>
 
 			<!-- Action Buttons -->
-			<div>
-				<button on:click={startCountdown} class="control-button bg-emerald-600 hover-bg-emerald-700">
+			<div class="flex flex-wrap justify-center items-center gap-4">
+				<button
+					on:click={startCountdown}
+					class="control-button bg-emerald-600 hover-bg-emerald-700"
+				>
 					Start
 				</button>
 				<button on:click={pauseCountdown} class="control-button bg-amber-600 hover-bg-amber-700">
@@ -125,6 +128,95 @@
 				</button>
 			</div>
 		</div>
+
+		<!-- Advanced Options Toggle -->
+		<div class="text-center mb-4">
+			<button
+				type="button"
+				class="text-sm text-gray-600 hover:text-gray-800 focus:outline-none"
+				on:click={() => (showAdvancedOptions = !showAdvancedOptions)}
+			>
+				{showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+			</button>
+		</div>
+
+		<!-- Advanced Options -->
+		{#if showAdvancedOptions}
+			<div class="flex flex-wrap justify-center items-center gap-4">
+				<!-- Color Control -->
+				<div class="flex items-center">
+					<label for="numberColor" class="control-label">Color:</label>
+					<input
+						type="color"
+						id="numberColor"
+						bind:value={config.numberColor}
+						class="control-input-color focus:shadow-outline focus:border-indigo-500"
+					/>
+				</div>
+
+				<!-- Circles Control -->
+				<div class="flex items-center">
+					<label for="numCircles" class="control-label">Circles:</label>
+					<input type="number" id="numCircles" bind:value={config.numCircles} class="control-input" />
+				</div>
+
+				<!-- Radius Control -->
+				<div class="flex items-center">
+					<label for="circleRadius" class="control-label">Radius:</label>
+					<input
+						type="number"
+						id="circleRadius"
+						bind:value={config.circleRadius}
+						class="control-input"
+					/>
+				</div>
+
+				<!-- Stroke Control -->
+				<div class="flex items-center">
+					<label for="strokeRatio" class="control-label">Stroke:</label>
+					<input
+						type="number"
+						id="strokeRatio"
+						bind:value={config.strokeRatio}
+						step="0.01"
+						class="control-input"
+					/>
+				</div>
+
+				<!-- Spacing Control -->
+				<div class="flex items-center">
+					<label for="circleSpacing" class="control-label">Spacing:</label>
+					<input
+						type="number"
+						id="circleSpacing"
+						bind:value={config.circleSpacing}
+						class="control-input"
+					/>
+				</div>
+
+				<!-- Loop Control -->
+				<div class="flex items-center">
+					<input
+						type="checkbox"
+						id="loop"
+						bind:checked={loop}
+						class="control-checkbox mr-1 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-indigo-500"
+					/>
+					<label for="loop" class="control-label">Loop</label>
+				</div>
+
+				<!-- Beep Control -->
+				<div class="flex items-center">
+					<input
+						type="checkbox"
+						id="beep"
+						bind:checked={beep}
+						class="control-checkbox mr-1 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-indigo-500"
+					/>
+					<label for="beep" class="control-label">Beep</label>
+				</div>
+			</div>
+		{/if}
 	</footer>
 </div>
 
@@ -136,7 +228,7 @@
 
 	/* --- Control Input (Text & Number) --- */
 	.control-input {
-		@apply shadow appearance-none border rounded w-20 py-1 px-2 text-gray-700 leading-tight border-gray-400 text-sm ;
+		@apply shadow appearance-none border rounded w-20 py-1 px-2 text-gray-700 leading-tight border-gray-400 text-sm;
 	}
 
 	/* --- Control Input (Color) --- */
@@ -150,7 +242,7 @@
 
 	/* --- Control Checkbox --- */
 	.control-checkbox {
-		@apply h-4 w-4 text-indigo-600 border-gray-300 rounded ;
+		@apply h-4 w-4 text-indigo-600 border-gray-300 rounded;
 	}
 
 	/* --- Control Button --- */
