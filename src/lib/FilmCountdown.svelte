@@ -1,14 +1,19 @@
 <script>
 	let {
-		initialCount = 5,
-		countdownDuration = 1000, // Note: in milliseconds
+		initialCount = $bindable(5),
+		countdownDuration = $bindable(1000), // Note: in milliseconds
 		onComplete = () => {}, // Callback when countdown finishes
 		onEachCount = () => {}, // Callback after each count
-		config =$bindable({}),
+		config = $bindable({
+			numberColor: 'var(--countdown-number-color)',
+			numCircles: 2,
+			circleRadius: 64,
+			circleSpacing: 8, // Default spacing between circles
+			strokeRatio: 1 / 40, // Proportion of radius for all strokes
+			canvasSize: 256 // New config for viewBox dimensions
+		}),
 		loop = $bindable(false)
 	} = $props();
-
-	let { numberColor = 'var(--countdown-number-color)', numCircles = 4 } = config;
 
 	let count = $state(initialCount);
 	let progress = $state(0);
@@ -22,11 +27,8 @@
 	 * @returns {void}
 	 */
 	export function start() {
-		count = initialCount;
-		progress = 0;
+		reset();
 		isRunning = true;
-		isPaused = false;
-		pausedDuration = 0; // Reset paused duration on start
 	}
 
 	/**
@@ -51,10 +53,10 @@
 		}
 	}
 
-  /**
- * Resets the countdown
- * @returns {void}
- */
+	/**
+	 * Resets the countdown
+	 * @returns {void}
+	 */
 	export function reset() {
 		isPaused = false;
 		count = initialCount;
@@ -66,7 +68,6 @@
 	$effect(() => {
 		let startTime;
 		let animationFrame;
-
 
 		const animate = (timestamp) => {
 			if (!isRunning) return;
@@ -108,7 +109,6 @@
 			animationFrame = requestAnimationFrame(animate);
 		}
 
-
 		return () => {
 			if (animationFrame) {
 				cancelAnimationFrame(animationFrame);
@@ -116,7 +116,47 @@
 		};
 	});
 
-	const circles = $derived(Array(numCircles).fill(null));
+	const circles = $derived(Array(config.numCircles ?? 2).fill(null));
+	const containerHeight = $derived(((config.canvasSize ?? 256) * 9) / 16);
+	const canvasSize = $derived(config.canvasSize ?? 256);
+	const circleSpacing = $derived(config.circleSpacing ?? 8);
+	const circleRadius = $derived(config.circleRadius ?? 60);
+	const strokeRatio = $derived(config.strokeRatio ?? 1 / 40);
+
+
+	/**
+	 * Calculates the SVG path data for a sweeping background arc.
+	 *
+	 * @param {Object} params - The parameters for the calculation.
+	 * @param {number} params.angle - The angle of the arc in radians.
+	 * @param {number} params.cx - The x-coordinate of the center of the arc.
+	 * @param {number} params.cy - The y-coordinate of the center of the arc.
+	 * @param {number} params.r - The radius of the arc.
+	 * @returns {string} The SVG path data for the sweeping background arc.
+	 */
+	function calculateSweepingBackgroundPoints({ angle, cx, cy, r }) {
+		const endX = cx + r * Math.cos(angle - Math.PI / 2);
+		const endY = cy + r * Math.sin(angle - Math.PI / 2);
+		const largeArcFlag = angle > Math.PI ? 1 : 0;
+
+		return `M ${cx} ${cy} L ${cx} ${cy - r} A ${r} ${r} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+	}
+
+	/**
+	 * A derived store that calculates the SVG path data for the sweeping background arc
+	 * based on the current canvas size, container height, and progress.
+	 * 
+	 * @returns {string} The SVG path data for the sweeping background arc.
+	 */
+	const sweepingBackgroundPath = $derived(() => {
+		const w = canvasSize;
+		const h = containerHeight;
+		const cx = w / 2;
+		const cy = h / 2;
+		const angle = progress * 2 * Math.PI;
+		const r = (Math.max(w, h) / 2) * Math.sqrt(2); // Radius to cover the corners
+		return calculateSweepingBackgroundPoints({ angle, cx, cy, r });
+	});
 </script>
 
 <div class="film-countdown">
@@ -150,7 +190,7 @@
 	</div>
 
 	<div class="countdown-container">
-		<svg viewBox="0 0 256 256">
+		<svg viewBox={`0 0 ${canvasSize} ${containerHeight}`}>
 			<filter id="noiseFilter">
 				<feTurbulence
 					type="fractalNoise"
@@ -164,34 +204,38 @@
 
 			<path
 				class="sweeping-background"
-				d={`M128 128 L128 0 A128 128 0 ${progress > 0.5 ? 1 : 0} 1
-          ${128 + 128 * Math.sin(progress * 2 * Math.PI)}
-          ${128 - 128 * Math.cos(progress * 2 * Math.PI)} Z`}
+				d={sweepingBackgroundPath()}
 				fill="var(--sweeping-background-color)"
 			/>
 
 			{#each circles as _, i}
 				<circle
-					cx="128"
-					cy="128"
-					r={128 - i * 16}
+					cx={canvasSize / 2}
+					cy={containerHeight / 2}
+					r={circleRadius - i * circleSpacing}
 					fill="none"
 					stroke="url(#circleGradient)"
-					stroke-width={i === 0 || i === 3
-						? 'var(--circle-stroke-width-thick)'
-						: 'var(--circle-stroke-width-thin)'}
+					stroke-width={circleRadius * strokeRatio}
 				/>
 			{/each}
 
 			<defs>
 				<linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--circle-gradient-start)" stop-opacity="1" />
+					<stop
+						offset="0%"
+						stop-color={config.circleGradientStart ?? 'var(--circle-gradient-start)'}
+						stop-opacity="1"
+					/>
 					<stop
 						offset="50%"
-						stop-color="var(--circle-gradient-middle)"
+						stop-color={config.circleGradientMiddle ?? 'var(--circle-gradient-middle)'}
 						stop-opacity="var(--circle-gradient-middle-opacity)"
 					/>
-					<stop offset="100%" stop-color="var(--circle-gradient-end)" stop-opacity="1" />
+					<stop
+						offset="100%"
+						stop-color={config.circleGradientEnd ?? 'var(--circle-gradient-end)'}
+						stop-opacity="1"
+					/>
 				</linearGradient>
 			</defs>
 		</svg>
@@ -199,7 +243,7 @@
 		<div class="number-display">
 			<span
 				class="number-text"
-				style="color: {numberColor}; font-family: var(--number-font); text-shadow: var(--number-text-shadow);"
+				style="color: {config.numberColor}; font-family: var(--number-font); text-shadow: var(--number-text-shadow);"
 			>
 				{count === 0 ? '' : count}
 			</span>
@@ -268,8 +312,6 @@
 
 		--sweeping-background-color: rgba(0, 0, 0, 0.15);
 
-		--circle-stroke-width-thick: 3px;
-		--circle-stroke-width-thin: 2px;
 		--circle-gradient-start: black;
 		--circle-gradient-middle: black;
 		--circle-gradient-middle-opacity: 0.8;
@@ -296,6 +338,7 @@
 		position: relative;
 		width: 100%;
 		max-width: 42rem;
+		min-width: 320px;
 		aspect-ratio: 16 / 9;
 		background-color: #d1d5db;
 		overflow: hidden;
@@ -325,6 +368,7 @@
 	}
 
 	.number-text {
+		color: var(--countdown-number-color);
 		font-size: 8rem;
 		font-family: var(--number-font);
 		text-shadow: var(--number-text-shadow);
@@ -450,14 +494,4 @@
 		width: 1px;
 		background-color: var(--scratch-color);
 	}
-
-	.branding-slot {
-		position: absolute;
-		bottom: 0.5rem;
-		right: 0.5rem;
-		font-size: 0.8rem;
-		color: rgba(0, 0, 0, 0.6);
-	}
-
-	/* Ensure branding slot content is not interactive */
 </style>
