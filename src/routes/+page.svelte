@@ -65,7 +65,7 @@
 			title="github repository"
 			class="text-gray-600 hover:text-indigo-300 font-medium text-sm"
 		>
-			<Github class="w-7 h-7"/>
+			<Github class="w-7 h-7" />
 		</a>
 	</header>
 
