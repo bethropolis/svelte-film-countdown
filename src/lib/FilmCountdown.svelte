@@ -1,5 +1,4 @@
 <script>
-	import { derived } from 'svelte/store';
 	let {
 		initialCount = $bindable(5),
 		countdownDuration = $bindable(1000), // Note: in milliseconds
@@ -117,11 +116,13 @@
 		};
 	});
 
-	const circles = $derived(Array(config.numCircles).fill(null));
-	const containerHeight = $derived((config.canvasSize * 9) / 16);
+	const circles = $derived(Array(config.numCircles ?? 2).fill(null));
+	const containerHeight = $derived(((config.canvasSize ?? 256) * 9) / 16);
 	const canvasSize = $derived(config.canvasSize ?? 256);
-	const circleSpacing = $derived(config.circleSpacing ?? 16);
-	const circleRadius = $derived(config.circleRadius ?? 128);
+	const circleSpacing = $derived(config.circleSpacing ?? 8);
+	const circleRadius = $derived(config.circleRadius ?? 60);
+	const strokeRatio = $derived(config.strokeRatio ?? 1 / 40);
+
 
 	/**
 	 * Calculates the SVG path data for a sweeping background arc.
@@ -211,10 +212,10 @@
 				<circle
 					cx={canvasSize / 2}
 					cy={containerHeight / 2}
-					r={config.circleRadius - i * config.circleSpacing}
+					r={circleRadius - i * circleSpacing}
 					fill="none"
 					stroke="url(#circleGradient)"
-					stroke-width={config.circleRadius * config.strokeRatio}
+					stroke-width={circleRadius * strokeRatio}
 				/>
 			{/each}
 
@@ -337,6 +338,7 @@
 		position: relative;
 		width: 100%;
 		max-width: 42rem;
+		min-width: 320px;
 		aspect-ratio: 16 / 9;
 		background-color: #d1d5db;
 		overflow: hidden;
