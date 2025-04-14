@@ -59,7 +59,7 @@
 	<header class="bg-cream p-6 w-full flex justify-between items-center">
 		<h1 class="text-xl font-semibold text-gray-800">Vintage Film Countdown</h1>
 		<a
-			href="YOUR_GITHUB_REPOSITORY_LINK_HERE"
+			href="https://github.com/bethropolis/svelte-film-countdown"
 			target="_blank"
 			rel="noopener noreferrer"
 			title="github repository"
