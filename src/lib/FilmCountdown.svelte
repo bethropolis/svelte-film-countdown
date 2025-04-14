@@ -1,4 +1,6 @@
 <script>
+	import { BROWSER } from 'esm-env'; // Import BROWSER check for SSR compatibility
+	
 	let {
 		initialCount = $bindable(5),
 		countdownDuration = $bindable(1000), // Note: in milliseconds
@@ -10,7 +12,12 @@
 			circleRadius: 64,
 			circleSpacing: 8, // Default spacing between circles
 			strokeRatio: 1 / 40, // Proportion of radius for all strokes
-			canvasSize: 256 // New config for viewBox dimensions
+			canvasSize: 256, // New config for viewBox dimensions
+			paperTextureOpacity: 0.25,
+			paperTextureEnabled: true,
+			paperTextureColor: '#a08060',
+			paperTextureBlendMode: 'multiply',
+			paperTextureIntensity: 0.7
 		}),
 		loop = $bindable(false)
 	} = $props();
@@ -19,8 +26,8 @@
 	let progress = $state(0);
 	let isRunning = $state(false);
 	let isPaused = $state(false);
-	let pauseStartTime = $state(0); // To store the timestamp when paused
-	let pausedDuration = $state(0); // To store the total duration of pauses
+	let lastTimestamp = $state(0); // Timestamp of the last animation frame
+	let remainingTime = $state(initialCount * countdownDuration); // Add remaining time tracking
 
 	/**
 	 * Starts the countdown
@@ -29,6 +36,7 @@
 	export function start() {
 		reset();
 		isRunning = true;
+		lastTimestamp = performance.now();
 	}
 
 	/**
@@ -37,8 +45,8 @@
 	 */
 	export function pause() {
 		if (isRunning && !isPaused) {
-			isPaused = true;
-			pauseStartTime = performance.now();
+			isRunning = false; // Stop the animation loop
+			isPaused = true; // Mark as paused
 		}
 	}
 
@@ -49,7 +57,8 @@
 	export function resume() {
 		if (isPaused) {
 			isPaused = false;
-			pausedDuration += performance.now() - pauseStartTime; // Accumulate paused time
+			isRunning = true;
+			lastTimestamp = performance.now(); // Reset timestamp to avoid a large jump
 		}
 	}
 
@@ -59,45 +68,63 @@
 	 */
 	export function reset() {
 		isPaused = false;
+		isRunning = false;
 		count = initialCount;
 		progress = 0;
-		isRunning = false;
-		pausedDuration = 0;
+		remainingTime = initialCount * countdownDuration; // Reset total remaining time
+		lastTimestamp = 0;
 	}
 
 	$effect(() => {
-		let startTime;
+		// Only run in browser and if running
+		if (!BROWSER || !isRunning) {
+			return;
+		}
+		
 		let animationFrame;
 
 		const animate = (timestamp) => {
 			if (!isRunning) return;
 
-			if (isPaused) {
-				return; // Do nothing if paused
-			}
-
-			if (!startTime) {
-				startTime = timestamp - pausedDuration; // Adjust start time by total paused duration
-			}
-
-			const elapsed = timestamp - startTime;
-			const newProgress = (elapsed % countdownDuration) / countdownDuration;
-
-			progress = newProgress;
-
-			if (elapsed >= countdownDuration) {
-				startTime = timestamp;
-				if (count > 1) {
-					count--;
-					onEachCount(count);
-				} else {
-					count = 0;
-					isRunning = false;
-					onComplete();
-					if (loop) {
-						start();
-					}
+			// Calculate elapsed time since last frame
+			const delta = timestamp - lastTimestamp;
+			lastTimestamp = timestamp;
+			
+			// Cap delta to avoid huge jumps if browser tab was inactive
+			const cappedDelta = Math.min(delta, countdownDuration);
+			
+			 // Update remaining time
+			remainingTime -= cappedDelta;
+			
+			if (remainingTime <= 0) {
+				// Countdown complete
+				count = 0;
+				progress = 1; // Show full progress
+				isRunning = false;
+				onComplete();
+				
+				if (loop) {
+					setTimeout(() => {
+						if (loop) start(); // Check loop again in case it changed
+					}, 50);
 				}
+				return;
+			} else {
+				// Calculate current count based on remaining time
+				const newCount = Math.ceil(remainingTime / countdownDuration);
+				
+				// Calculate progress within current count (0 to 1)
+				const timeIntoCurrentCount = countdownDuration - (remainingTime % countdownDuration);
+				const newProgress = (remainingTime % countdownDuration === 0) ? 
+				                    0 : timeIntoCurrentCount / countdownDuration;
+				
+				// Update count if it changed
+				if (newCount !== count) {
+					count = newCount;
+					onEachCount(count);
+				}
+				
+				progress = newProgress;
 			}
 
 			if (isRunning) {
@@ -105,10 +132,10 @@
 			}
 		};
 
-		if (isRunning) {
-			animationFrame = requestAnimationFrame(animate);
-		}
+		// Start the animation loop
+		animationFrame = requestAnimationFrame(animate);
 
+		// Cleanup function
 		return () => {
 			if (animationFrame) {
 				cancelAnimationFrame(animationFrame);
@@ -123,6 +150,11 @@
 	const circleRadius = $derived(config.circleRadius ?? 60);
 	const strokeRatio = $derived(config.strokeRatio ?? 1 / 40);
 
+	const paperTextureEnabled = $derived(config.paperTextureEnabled ?? true);
+	const paperTextureOpacity = $derived(config.paperTextureOpacity ?? 0.25);
+	const paperTextureColor = $derived(config.paperTextureColor ?? '#a08060');
+	const paperTextureBlendMode = $derived(config.paperTextureBlendMode ?? 'multiply');
+	const paperTextureIntensity = $derived(config.paperTextureIntensity ?? 0.7);
 
 	/**
 	 * Calculates the SVG path data for a sweeping background arc.
@@ -157,9 +189,31 @@
 		const r = (Math.max(w, h) / 2) * Math.sqrt(2); // Radius to cover the corners
 		return calculateSweepingBackgroundPoints({ angle, cx, cy, r });
 	});
+
+	// Generate static scratches data for better performance
+	const scratchesData = $state(Array.from({ length: 3 }, (_, i) => ({
+		id: i,
+		left: `${Math.random() * 100}%`,
+		top: `${Math.random() * 95}%`, // Keep away from bottom edge
+		height: `${10 + Math.random() * 20}px`,
+		rotation: `${Math.random() * 360}deg`,
+	})));
 </script>
 
 <div class="film-countdown">
+	<!-- Enhanced paper texture layer with dynamic styling -->
+	{#if config.paperTextureEnabled}
+		<div 
+			class="paper-texture" 
+			style="
+				opacity: {config.paperTextureOpacity};
+				mix-blend-mode: {config.paperTextureBlendMode};
+				background-color: {config.paperTextureColor};
+				filter: contrast({100 + config.paperTextureIntensity * 100}%) brightness({400 + config.paperTextureIntensity * 400}%);
+			"
+		></div>
+	{/if}
+
 	<div class="film-holes">
 		<svg width="100%" height="100%">
 			<pattern
@@ -286,12 +340,10 @@
 	</div>
 
 	<div class="scratches" style="opacity: var(--scratch-opacity);">
-		{#each Array.from({ length: 3 }) as _, i}
+		{#each scratchesData as scratch (scratch.id)}
 			<div
 				class="scratch"
-				style="left: {Math.random() * 100}%; top: {Math.random() * 100}%; height: {10 +
-					Math.random() * 20}px; transform: rotate({Math.random() *
-					360}deg); background-color: var(--scratch-color);"
+				style="left: {scratch.left}; top: {scratch.top}; height: {scratch.height}; transform: rotate({scratch.rotation}); background-color: var(--scratch-color);"
 			></div>
 		{/each}
 	</div>
@@ -332,6 +384,9 @@
 			transparent,
 			rgba(156, 163, 175, 0.05)
 		); /* More subtle grain pattern */
+
+		--paper-texture-color: rgba(210, 180, 140, 0.03);
+		--paper-texture-blend: multiply;
 	}
 
 	.film-countdown {
@@ -369,7 +424,8 @@
 
 	.number-text {
 		color: var(--countdown-number-color);
-		font-size: 8rem;
+		font-size: clamp(4rem, 20vmin, 8rem); /* Responsive font size from filmCountdown.txt */
+		/* Removed font-weight: bold to restore original look */
 		font-family: var(--number-font);
 		text-shadow: var(--number-text-shadow);
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
@@ -425,21 +481,12 @@
 	}
 
 	@keyframes flicker {
-		0% {
-			opacity: 0.92;
-		}
-		25% {
-			opacity: 0.95;
-		}
-		50% {
-			opacity: 0.9;
-		}
-		75% {
-			opacity: 0.93;
-		}
-		100% {
-			opacity: 0.92;
-		}
+		0% { opacity: 0.9; }
+		20% { opacity: 0.85; }
+		40% { opacity: 0.95; }
+		60% { opacity: 0.88; }
+		80% { opacity: 0.92; }
+		100% { opacity: 0.9; }
 	}
 
 	.age-artifacts {
@@ -493,5 +540,21 @@
 		left: 0;
 		width: 1px;
 		background-color: var(--scratch-color);
+	}
+
+	.paper-texture {
+		position: absolute;
+		inset: 0;
+		background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='5' stitchTiles='stitch' seed='23'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+		            url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.15'/%3E%3C/svg%3E");
+		background-size: 200px 200px, 100px 100px;
+		pointer-events: none;
+		z-index: 1;
+	}
+
+	/* Put the paper texture behind most elements but in front of base background */
+	.film-countdown {
+		/* ...existing styles... */
+		position: relative;
 	}
 </style>
