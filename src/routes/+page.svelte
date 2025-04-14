@@ -78,7 +78,7 @@
 
 <!-- Footer - Controls -->
 <footer class="bg-cream p-4 w-full border-t border-sepia/30 shadow-inner">
-	<p class="text-sepia text-center mb-6 vintage-instruction">
+	<p class="text-sepia text-center mb-6 italic opacity-85">
 		Adjust the settings to see the countdown change.
 	</p>
 
@@ -120,25 +120,25 @@
 		<div class="flex gap-4 flex-wrap justify-center">
 			<button
 				onclick={startCountdown}
-				class="vintage-button vintage-button-primary"
+				class="font-bold py-1.5 px-3 rounded text-sepia border border-sepia bg-[#d6b171] shadow transition-all duration-300 min-w-[80px] tracking-wider relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
 			>
 				Start
 			</button>
 			<button
 				onclick={pauseCountdown}
-				class="vintage-button vintage-button-secondary"
+				class="font-bold py-1.5 px-3 rounded text-sepia border border-sepia bg-[#a7b5a2] shadow transition-all duration-300 min-w-[80px] tracking-wider relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
 			>
 				Pause
 			</button>
 			<button
 				onclick={resumeCountdown}
-				class="vintage-button vintage-button-tertiary"
+				class="font-bold py-1.5 px-3 rounded text-sepia border border-sepia bg-[#b8c0cc] shadow transition-all duration-300 min-w-[80px] tracking-wider relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
 			>
 				Resume
 			</button>
 			<button
 				onclick={resetCountdown}
-				class="vintage-button vintage-button-danger"
+				class="font-bold py-1.5 px-3 rounded text-sepia border border-sepia bg-[#c9a0a0] shadow transition-all duration-300 min-w-[80px] tracking-wider relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
 			>
 				Reset
 			</button>
@@ -149,7 +149,7 @@
 	<div class="text-center mb-4">
 		<button
 			type="button"
-			class="vintage-toggle-button"
+			class="bg-transparent border-none text-sepia text-sm underline cursor-pointer transition-colors duration-300 hover:text-[#906734]"
 			onclick={() => (showAdvancedOptions = !showAdvancedOptions)}
 		>
 			{showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
@@ -341,76 +341,7 @@
 </footer>
 
 <style>
-	/* Vintage UI Elements */
-	.vintage-input {
-		background-color: rgba(248, 240, 227, 0.8);
-		border: 1px solid var(--sepia);
-		border-radius: 3px;
-		padding: 4px 8px;
-		width: 80px;
-		font-size: 0.9rem;
-		color: var(--sepia);
-		box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);
-		transition: all 0.3s ease;
-	}
-
-	.vintage-input:focus {
-		outline: none;
-		border-color: var(--aged-paper);
-		box-shadow: 0 0 0 2px rgba(112, 66, 20, 0.2);
-	}
-
-	.vintage-button {
-		font-weight: bold;
-		padding: 6px 12px;
-		border-radius: 3px;
-		color: var(--sepia);
-		border: 1px solid var(--sepia);
-		background: var(--aged-paper);
-		box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-		transition: all 0.3s ease;
-		min-width: 80px;
-		letter-spacing: 0.05em;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.vintage-button::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0));
-		pointer-events: none;
-	}
-
-	.vintage-button:hover {
-		transform: translateY(-1px);
-	}
-
-	.vintage-button:active {
-		transform: translateY(1px);
-		box-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
-	}
-
-	.vintage-button-primary {
-		background-color: #d6b171;
-	}
-
-	.vintage-button-secondary {
-		background-color: #a7b5a2;
-	}
-
-	.vintage-button-tertiary {
-		background-color: #b8c0cc;
-	}
-
-	.vintage-button-danger {
-		background-color: #c9a0a0;
-	}
-
+	/* Vintage UI Elements - Keep only those that are difficult to implement with Tailwind */
 	.vintage-checkbox {
 		-webkit-appearance: none;
 		appearance: none;
@@ -434,31 +365,6 @@
 		left: 2px;
 	}
 
-	.vintage-toggle-button {
-		background: none;
-		border: none;
-		color: var(--sepia);
-		font-size: 0.9rem;
-		text-decoration: underline;
-		cursor: pointer;
-		transition: color 0.3s;
-	}
-
-	.vintage-toggle-button:hover {
-		color: #906734;
-	}
-
-	.vintage-instruction {
-		font-style: italic;
-		opacity: 0.85;
-	}
-
-	.vintage-texture {
-		background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.5 0' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' /%3E%3C/svg%3E");
-		filter: contrast(170%) brightness(800%);
-		mix-blend-mode: multiply;
-	}
-
 	.vintage-color-input {
 		border: 1px solid var(--sepia);
 		border-radius: 3px;
@@ -466,11 +372,41 @@
 		cursor: pointer;
 		background-color: transparent;
 	}
+
+	.vintage-input {
+		background-color: rgba(248, 240, 227, 0.8);
+		border: 1px solid var(--sepia);
+		border-radius: 3px;
+		padding: 4px 8px;
+		width: 80px;
+		font-size: 0.9rem;
+		color: var(--sepia);
+		box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);
+		transition: all 0.3s ease;
+	}
+
+	.vintage-input:focus {
+		outline: none;
+		border-color: var(--aged-paper);
+		box-shadow: 0 0 0 2px rgba(112, 66, 20, 0.2);
+	}
 	
 	/* Make grid more responsive on small screens */
 	@media (max-width: 640px) {
 		.grid {
 			gap: 8px;
 		}
+	}
+    
+	/* Custom button after overlay that can't be easily done with Tailwind */
+	.vintage-button::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0));
+		pointer-events: none;
 	}
 </style>

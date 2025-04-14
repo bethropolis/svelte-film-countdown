@@ -13,7 +13,7 @@
   <div class="min-h-screen bg-cream flex flex-col">
     <!-- Header -->
     <header class="bg-cream p-6 w-full flex justify-between items-center">
-      <h1 class="text-xl font-semibold vintage-title select-none">Vintage Film Countdown</h1>>
+      <h1 class="text-xl font-semibold vintage-title select-none">Vintage Film Countdown</h1>
       <a
         href="https://github.com/bethropolis/svelte-film-countdown"
         target="_blank"
