@@ -1,4 +1,5 @@
 # svelte-film-countdown
+[![Deploy to GitHub Pages](https://github.com/bethropolis/svelte-film-countdown/actions/workflows/pages.yaml/badge.svg)](https://github.com/bethropolis/svelte-film-countdown/actions/workflows/pages.yaml)
 
 A vintage-style film countdown component for your Svelte 5 applications, built with runes.
 
