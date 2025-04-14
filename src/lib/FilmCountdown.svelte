@@ -10,7 +10,12 @@
 			circleRadius: 64,
 			circleSpacing: 8, // Default spacing between circles
 			strokeRatio: 1 / 40, // Proportion of radius for all strokes
-			canvasSize: 256 // New config for viewBox dimensions
+			canvasSize: 256, // New config for viewBox dimensions
+			paperTextureOpacity: 0.25,
+			paperTextureEnabled: true,
+			paperTextureColor: '#a08060',
+			paperTextureBlendMode: 'multiply',
+			paperTextureIntensity: 0.7
 		}),
 		loop = $bindable(false)
 	} = $props();
@@ -123,6 +128,11 @@
 	const circleRadius = $derived(config.circleRadius ?? 60);
 	const strokeRatio = $derived(config.strokeRatio ?? 1 / 40);
 
+	const paperTextureEnabled = $derived(config.paperTextureEnabled ?? true);
+	const paperTextureOpacity = $derived(config.paperTextureOpacity ?? 0.25);
+	const paperTextureColor = $derived(config.paperTextureColor ?? '#a08060');
+	const paperTextureBlendMode = $derived(config.paperTextureBlendMode ?? 'multiply');
+	const paperTextureIntensity = $derived(config.paperTextureIntensity ?? 0.7);
 
 	/**
 	 * Calculates the SVG path data for a sweeping background arc.
@@ -160,6 +170,19 @@
 </script>
 
 <div class="film-countdown">
+	<!-- Enhanced paper texture layer with dynamic styling -->
+	{#if paperTextureEnabled}
+		<div 
+			class="paper-texture" 
+			style="
+				opacity: {paperTextureOpacity};
+				mix-blend-mode: {paperTextureBlendMode};
+				background-color: {paperTextureColor};
+				filter: contrast({100 + paperTextureIntensity * 100}%) brightness({400 + paperTextureIntensity * 400}%);
+			"
+		></div>
+	{/if}
+
 	<div class="film-holes">
 		<svg width="100%" height="100%">
 			<pattern
@@ -332,6 +355,9 @@
 			transparent,
 			rgba(156, 163, 175, 0.05)
 		); /* More subtle grain pattern */
+
+		--paper-texture-color: rgba(210, 180, 140, 0.03);
+		--paper-texture-blend: multiply;
 	}
 
 	.film-countdown {
@@ -493,5 +519,21 @@
 		left: 0;
 		width: 1px;
 		background-color: var(--scratch-color);
+	}
+
+	.paper-texture {
+		position: absolute;
+		inset: 0;
+		background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='5' stitchTiles='stitch' seed='23'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+		            url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.15'/%3E%3C/svg%3E");
+		background-size: 200px 200px, 100px 100px;
+		pointer-events: none;
+		z-index: 1;
+	}
+
+	/* Put the paper texture behind most elements but in front of base background */
+	.film-countdown {
+		/* ...existing styles... */
+		position: relative;
 	}
 </style>
