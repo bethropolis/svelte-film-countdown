@@ -1,4 +1,6 @@
 <script>
+	import { BROWSER } from 'esm-env'; // Import BROWSER check for SSR compatibility
+	
 	let {
 		initialCount = $bindable(5),
 		countdownDuration = $bindable(1000), // Note: in milliseconds
@@ -24,8 +26,8 @@
 	let progress = $state(0);
 	let isRunning = $state(false);
 	let isPaused = $state(false);
-	let pauseStartTime = $state(0); // To store the timestamp when paused
-	let pausedDuration = $state(0); // To store the total duration of pauses
+	let lastTimestamp = $state(0); // Timestamp of the last animation frame
+	let remainingTime = $state(initialCount * countdownDuration); // Add remaining time tracking
 
 	/**
 	 * Starts the countdown
@@ -34,6 +36,7 @@
 	export function start() {
 		reset();
 		isRunning = true;
+		lastTimestamp = performance.now();
 	}
 
 	/**
@@ -42,8 +45,8 @@
 	 */
 	export function pause() {
 		if (isRunning && !isPaused) {
-			isPaused = true;
-			pauseStartTime = performance.now();
+			isRunning = false; // Stop the animation loop
+			isPaused = true; // Mark as paused
 		}
 	}
 
@@ -54,7 +57,8 @@
 	export function resume() {
 		if (isPaused) {
 			isPaused = false;
-			pausedDuration += performance.now() - pauseStartTime; // Accumulate paused time
+			isRunning = true;
+			lastTimestamp = performance.now(); // Reset timestamp to avoid a large jump
 		}
 	}
 
@@ -64,45 +68,63 @@
 	 */
 	export function reset() {
 		isPaused = false;
+		isRunning = false;
 		count = initialCount;
 		progress = 0;
-		isRunning = false;
-		pausedDuration = 0;
+		remainingTime = initialCount * countdownDuration; // Reset total remaining time
+		lastTimestamp = 0;
 	}
 
 	$effect(() => {
-		let startTime;
+		// Only run in browser and if running
+		if (!BROWSER || !isRunning) {
+			return;
+		}
+		
 		let animationFrame;
 
 		const animate = (timestamp) => {
 			if (!isRunning) return;
 
-			if (isPaused) {
-				return; // Do nothing if paused
-			}
-
-			if (!startTime) {
-				startTime = timestamp - pausedDuration; // Adjust start time by total paused duration
-			}
-
-			const elapsed = timestamp - startTime;
-			const newProgress = (elapsed % countdownDuration) / countdownDuration;
-
-			progress = newProgress;
-
-			if (elapsed >= countdownDuration) {
-				startTime = timestamp;
-				if (count > 1) {
-					count--;
-					onEachCount(count);
-				} else {
-					count = 0;
-					isRunning = false;
-					onComplete();
-					if (loop) {
-						start();
-					}
+			// Calculate elapsed time since last frame
+			const delta = timestamp - lastTimestamp;
+			lastTimestamp = timestamp;
+			
+			// Cap delta to avoid huge jumps if browser tab was inactive
+			const cappedDelta = Math.min(delta, countdownDuration);
+			
+			 // Update remaining time
+			remainingTime -= cappedDelta;
+			
+			if (remainingTime <= 0) {
+				// Countdown complete
+				count = 0;
+				progress = 1; // Show full progress
+				isRunning = false;
+				onComplete();
+				
+				if (loop) {
+					setTimeout(() => {
+						if (loop) start(); // Check loop again in case it changed
+					}, 50);
 				}
+				return;
+			} else {
+				// Calculate current count based on remaining time
+				const newCount = Math.ceil(remainingTime / countdownDuration);
+				
+				// Calculate progress within current count (0 to 1)
+				const timeIntoCurrentCount = countdownDuration - (remainingTime % countdownDuration);
+				const newProgress = (remainingTime % countdownDuration === 0) ? 
+				                    0 : timeIntoCurrentCount / countdownDuration;
+				
+				// Update count if it changed
+				if (newCount !== count) {
+					count = newCount;
+					onEachCount(count);
+				}
+				
+				progress = newProgress;
 			}
 
 			if (isRunning) {
@@ -110,10 +132,10 @@
 			}
 		};
 
-		if (isRunning) {
-			animationFrame = requestAnimationFrame(animate);
-		}
+		// Start the animation loop
+		animationFrame = requestAnimationFrame(animate);
 
+		// Cleanup function
 		return () => {
 			if (animationFrame) {
 				cancelAnimationFrame(animationFrame);
@@ -167,18 +189,27 @@
 		const r = (Math.max(w, h) / 2) * Math.sqrt(2); // Radius to cover the corners
 		return calculateSweepingBackgroundPoints({ angle, cx, cy, r });
 	});
+
+	// Generate static scratches data for better performance
+	const scratchesData = $state(Array.from({ length: 3 }, (_, i) => ({
+		id: i,
+		left: `${Math.random() * 100}%`,
+		top: `${Math.random() * 95}%`, // Keep away from bottom edge
+		height: `${10 + Math.random() * 20}px`,
+		rotation: `${Math.random() * 360}deg`,
+	})));
 </script>
 
 <div class="film-countdown">
 	<!-- Enhanced paper texture layer with dynamic styling -->
-	{#if paperTextureEnabled}
+	{#if config.paperTextureEnabled}
 		<div 
 			class="paper-texture" 
 			style="
-				opacity: {paperTextureOpacity};
-				mix-blend-mode: {paperTextureBlendMode};
-				background-color: {paperTextureColor};
-				filter: contrast({100 + paperTextureIntensity * 100}%) brightness({400 + paperTextureIntensity * 400}%);
+				opacity: {config.paperTextureOpacity};
+				mix-blend-mode: {config.paperTextureBlendMode};
+				background-color: {config.paperTextureColor};
+				filter: contrast({100 + config.paperTextureIntensity * 100}%) brightness({400 + config.paperTextureIntensity * 400}%);
 			"
 		></div>
 	{/if}
@@ -309,12 +340,10 @@
 	</div>
 
 	<div class="scratches" style="opacity: var(--scratch-opacity);">
-		{#each Array.from({ length: 3 }) as _, i}
+		{#each scratchesData as scratch (scratch.id)}
 			<div
 				class="scratch"
-				style="left: {Math.random() * 100}%; top: {Math.random() * 100}%; height: {10 +
-					Math.random() * 20}px; transform: rotate({Math.random() *
-					360}deg); background-color: var(--scratch-color);"
+				style="left: {scratch.left}; top: {scratch.top}; height: {scratch.height}; transform: rotate({scratch.rotation}); background-color: var(--scratch-color);"
 			></div>
 		{/each}
 	</div>
@@ -395,7 +424,8 @@
 
 	.number-text {
 		color: var(--countdown-number-color);
-		font-size: 8rem;
+		font-size: clamp(4rem, 20vmin, 8rem); /* Responsive font size from filmCountdown.txt */
+		/* Removed font-weight: bold to restore original look */
 		font-family: var(--number-font);
 		text-shadow: var(--number-text-shadow);
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
@@ -451,21 +481,12 @@
 	}
 
 	@keyframes flicker {
-		0% {
-			opacity: 0.92;
-		}
-		25% {
-			opacity: 0.95;
-		}
-		50% {
-			opacity: 0.9;
-		}
-		75% {
-			opacity: 0.93;
-		}
-		100% {
-			opacity: 0.92;
-		}
+		0% { opacity: 0.9; }
+		20% { opacity: 0.85; }
+		40% { opacity: 0.95; }
+		60% { opacity: 0.88; }
+		80% { opacity: 0.92; }
+		100% { opacity: 0.9; }
 	}
 
 	.age-artifacts {
